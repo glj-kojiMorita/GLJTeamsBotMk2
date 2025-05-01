@@ -10,25 +10,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # Step 1: Checkout the code from the repository
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # Step 2: Setup Node.js (for running npm install)
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
 
+    # Step 3: Install dependencies using npm
     - name: Install dependencies
       run: npm install
 
+    # Step 4: Login to Azure using the Azure login action
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # Step 5: Zip the application files for deployment
     - name: Zip artifact
       run: zip -r release.zip .
 
+    # Step 6: Deploy to Azure Web App using the publish profile
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
-        app-name: glj-teamsbot-mk2
-        slot-name: production
+        app-name: glj-teamsbot-mk2  # Your Azure Web App name here
+        slot-name: production  # The deployment slot name (usually "production")
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: release.zip
 
