@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: glj-teams-bot
+    ports:
+      - "3978:3978"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+    # 🔽 証明書のボリュームマウント
+    volumes:
+      - ./certs:/home/site/certs:ro
+
+    # 🔽 環境変数の明示設定
+    environment:
+      - MicrosoftAppCertificateFile=/home/site/certs/bot-certificate.pfx
+      - KEY_VAULT_NAME=kv-kojimori547820435851 # ← あなたの Key Vault 名に置き換えてください
+
+  redis:
+    image: redis:7.2
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+

@@ -1,0 +1,46 @@
+[
+  {
+    "SQLServerDBConnectionString": "",
+    "controlPanelLink": "https://portal.azure.com",
+    "databases": null,
+    "destinationAppUrl": "http://glj-teamsbot-mk2.azurewebsites.net",
+    "hostingProviderForumLink": "",
+    "msdeploySite": "glj-teamsbot-mk2",
+    "mySQLDBConnectionString": "",
+    "profileName": "glj-teamsbot-mk2 - Web Deploy",
+    "publishMethod": "MSDeploy",
+    "publishUrl": "glj-teamsbot-mk2.scm.azurewebsites.net:443",
+    "userName": "$glj-teamsbot-mk2",
+    "userPWD": "mXyFfqGZB3H4MnwtlocJXCXEbc8s1TWHNrEX5SP5f1ShgknbicxcyonKxdep",
+    "webSystem": "WebSites"
+  },
+  {
+    "SQLServerDBConnectionString": "",
+    "controlPanelLink": "https://portal.azure.com",
+    "databases": null,
+    "destinationAppUrl": "http://glj-teamsbot-mk2.azurewebsites.net",
+    "ftpPassiveMode": "True",
+    "hostingProviderForumLink": "",
+    "mySQLDBConnectionString": "",
+    "profileName": "glj-teamsbot-mk2 - FTP",
+    "publishMethod": "FTP",
+    "publishUrl": "ftps://waws-prod-ty1-095.ftp.azurewebsites.windows.net/site/wwwroot",
+    "userName": "glj-teamsbot-mk2\\$glj-teamsbot-mk2",
+    "userPWD": "mXyFfqGZB3H4MnwtlocJXCXEbc8s1TWHNrEX5SP5f1ShgknbicxcyonKxdep",
+    "webSystem": "WebSites"
+  },
+  {
+    "SQLServerDBConnectionString": "",
+    "controlPanelLink": "https://portal.azure.com",
+    "databases": null,
+    "destinationAppUrl": "http://glj-teamsbot-mk2.azurewebsites.net",
+    "hostingProviderForumLink": "",
+    "mySQLDBConnectionString": "",
+    "profileName": "glj-teamsbot-mk2 - Zip Deploy",
+    "publishMethod": "ZipDeploy",
+    "publishUrl": "glj-teamsbot-mk2.scm.azurewebsites.net:443",
+    "userName": "$glj-teamsbot-mk2",
+    "userPWD": "mXyFfqGZB3H4MnwtlocJXCXEbc8s1TWHNrEX5SP5f1ShgknbicxcyonKxdep",
+    "webSystem": "WebSites"
+  }
+]

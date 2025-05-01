@@ -1,0 +1,7 @@
+{
+  "REDIS_URL": "rediss://:8tRvgkDosoS8SL2ZqBW2wjOHCRRXYJfsyAzCaFeKFsU=@glj-redis.redis.cache.windows.net:6380",
+  "REDIS_HOST": "glj-redis.redis.cache.windows.net",
+  "REDIS_PORT": "6380",
+  "REDIS_SSL": "true"
+}
+

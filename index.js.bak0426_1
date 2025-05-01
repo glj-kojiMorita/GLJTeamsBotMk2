@@ -1,0 +1,145 @@
+const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const { CloudAdapter, ConfigurationBotFrameworkAuthentication } = require('botbuilder');
+const GLJTeamsBot = require('./teamsBot');
+const redisClient = require('./redisClient');
+const logger = require('./logger');
+const appInsights = require("applicationinsights");
+
+const app = express();
+const PORT = process.env.PORT || 3978;
+
+// Application Insights 初期化
+if (process.env.APPINSIGHTS_INSTRUMENTATIONKEY) {
+    appInsights.setup(process.env.APPINSIGHTS_INSTRUMENTATIONKEY)
+        .setAutoDependencyCorrelation(true)
+        .setAutoCollectRequests(true)
+        .setAutoCollectPerformance(true)
+        .setAutoCollectExceptions(true)
+        .start();
+    logger.info('✅ Application Insights 初期化完了');
+} else {
+    logger.warn('⚠️ APPINSIGHTS_INSTRUMENTATIONKEY が未設定のため、Application Insights は無効です');
+}
+
+// Key Vault から認証情報を取得（必要に応じて）
+async function initializeBotCredentials() {
+    if (process.env.USE_KEYVAULT === 'true') {
+        const { DefaultAzureCredential } = require('@azure/identity');
+        const { SecretClient } = require('@azure/keyvault-secrets');
+        const credential = new DefaultAzureCredential();
+        const keyVaultUrl = `https://${process.env.KEY_VAULT_NAME}.vault.azure.net`;
+        const secretClient = new SecretClient(keyVaultUrl, credential);
+
+        const secretKeys = [
+            'MicrosoftAppId',
+            'MicrosoftAppType',
+            'MicrosoftAppTenantId',
+            'MicrosoftAppCertificateThumbprint',
+            'MicrosoftAppCertificateFile'
+        ];
+
+        for (const key of secretKeys) {
+            try {
+                const secret = await secretClient.getSecret(key);
+                process.env[key] = secret.value;
+                logger.info(`🔐 KeyVaultから${key}を取得`);
+            } catch (err) {
+                logger.error(`❌ KeyVaultから${key}の取得に失敗: ${err.message}`);
+                throw err;
+            }
+        }
+    } else {
+        logger.info('🔧 Key Vaultをスキップし、環境変数から認証情報を使用します');
+    }
+
+    // 証明書ログ出力（環境変数にある場合）
+    if (process.env.MicrosoftAppCertificateFile) {
+        const certPath = process.env.MicrosoftAppCertificateFile;
+        const certThumbprint = process.env.MicrosoftAppCertificateThumbprint;
+        logger.info(`📁 証明書パス: ${certPath}`);
+        logger.info(`🔑 拇印: ${certThumbprint}`);
+        logger.info(`📄 証明書ファイルの存在確認: ${fs.existsSync(certPath)}`);
+    }
+}
+
+// メイン処理
+(async () => {
+    try {
+        await initializeBotCredentials();
+
+        const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication(process.env);
+        const adapter = new CloudAdapter(botFrameworkAuthentication);
+
+        adapter.onTurnError = async (context, error) => {
+            logger.error(`❌ [onTurnError] ${error}`);
+            await context.sendActivity('エラーが発生しました。しばらくしてからもう一度お試しください。');
+        };
+
+        const bot = new GLJTeamsBot(redisClient);
+
+        // 健康チェック
+        app.get('/healthz', (req, res) => {
+            const healthStatus = {
+                status: 'ok',
+                timestamp: new Date().toISOString(),
+                db: redisClient.connected ? 'connected' : 'disconnected',
+                memory: `${(process.memoryUsage().rss / 1024 / 1024).toFixed(2)} MB`,
+                uptime: `${process.uptime().toFixed(2)} seconds`,
+                nodeVersion: process.version
+            };
+            res.status(200).json(healthStatus);
+        });
+
+        app.get('/', (req, res) => {
+            res.status(200).json({
+                status: 'running',
+                app: 'GLJ Teams Bot',
+                version: process.env.npm_package_version || 'unknown'
+            });
+        });
+
+        app.post('/api/messages', express.json(), async (req, res) => {
+            await adapter.process(req, res, async (context) => {
+                await bot.run(context);
+            });
+        });
+
+        // エラー処理
+        process.on('uncaughtException', (err) => {
+            logger.error(`❌ uncaughtException: ${err.stack}`);
+            if (appInsights.defaultClient) {
+                appInsights.defaultClient.trackException({ exception: err });
+            }
+        });
+
+        process.on('unhandledRejection', (reason) => {
+            logger.error(`❌ unhandledRejection: ${reason}`);
+            if (appInsights.defaultClient) {
+                appInsights.defaultClient.trackException({ exception: new Error(reason) });
+            }
+        });
+
+        // サーバー起動
+        const server = app.listen(PORT, '0.0.0.0', () => {
+            logger.info(`🟢 サーバー起動中：http://0.0.0.0:${PORT}`);
+        });
+
+        server.keepAliveTimeout = 60000;
+        server.headersTimeout = 65000;
+
+        process.on('SIGTERM', () => {
+            logger.info('🛑 SIGTERM を受信。グレースフルシャットダウンを開始...');
+            server.close(() => {
+                logger.info('🛑 サーバーが正常に停止しました');
+                process.exit(0);
+            });
+        });
+
+    } catch (error) {
+        logger.error(`❌ Bot起動時の致命的エラー: ${error.message}`);
+        process.exit(1);
+    }
+})();
+

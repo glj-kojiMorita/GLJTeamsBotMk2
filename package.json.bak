@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "@azure/core-auth": "^1.9.0",
+    "@azure/identity": "^4.9.0",
+    "@azure/openai": "^2.0.0",
+    "axios": "^1.8.4",
+    "botbuilder": "^4.23.2",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "ioredis": "^5.6.1",
+    "log4js": "^6.9.1",
+    "redis": "^4.7.0",
+    "uuid": "^11.1.0"
+  }
+}
