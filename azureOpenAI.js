@@ -1,4 +1,5 @@
-const { OpenAIClient, AzureKeyCredential } = require("@azure/openai"); // 正しいインポート方法
+// azureOpenAI.js
+const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
 const log4js = require('log4js');
 
 const logger = log4js.getLogger('azureOpenAI');
@@ -28,13 +29,13 @@ class AzureOpenAI {
 
     try {
       logger.debug(`Azure OpenAIリクエスト開始: ${prompt.substring(0, 50)}...`);
-      
+
       const result = await this.client.getChatCompletions(
         this.deploymentName,
         messages,
-        { 
+        {
           temperature: 0.7,
-          maxTokens: 800 
+          maxTokens: 800
         }
       );
 
@@ -49,4 +50,5 @@ class AzureOpenAI {
   }
 }
 
-module.exports = AzureOpenAI; // クラスごとエクスポート
+module.exports = AzureOpenAI;
+

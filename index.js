@@ -1,3 +1,4 @@
+// index.js
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -11,10 +12,8 @@ const app = express();
 const PORT = process.env.PORT || 3978;
 const HOST = process.env.HOST || '0.0.0.0';
 
-// JSONボディパーサーを全体に適用
 app.use(express.json());
 
-// Application Insights 初期化
 if (process.env.APPINSIGHTS_INSTRUMENTATIONKEY) {
     appInsights.setup(process.env.APPINSIGHTS_INSTRUMENTATIONKEY).start();
     logger.info('✅ Application Insights 初期化完了');
@@ -22,7 +21,6 @@ if (process.env.APPINSIGHTS_INSTRUMENTATIONKEY) {
     logger.warn('⚠️ Application Insights が未設定のため、無効です');
 }
 
-// Bot Framework 認証（マネージドID）
 const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication({
     MicrosoftAppId: process.env.MicrosoftAppId,
     MicrosoftAppType: 'UserAssignedMSI',
@@ -42,7 +40,6 @@ adapter.onTurnError = async (context, error) => {
 
 const bot = new GLJTeamsBot(redisClient);
 
-// 健康チェック
 app.get('/healthz', (req, res) => {
     res.status(200).json({
         status: 'ok',
@@ -51,7 +48,6 @@ app.get('/healthz', (req, res) => {
     });
 });
 
-// ルート確認
 app.get('/', (req, res) => {
     res.status(200).json({
         status: 'running',
@@ -60,14 +56,12 @@ app.get('/', (req, res) => {
     });
 });
 
-// Bot メッセージ受信
 app.post('/api/messages', async (req, res) => {
     await adapter.process(req, res, async (context) => {
         await bot.run(context);
     });
 });
 
-// プロセスエラー監視
 process.on('uncaughtException', (err) => {
     logger.error(`❌ uncaughtException: ${err.stack}`);
     appInsights.defaultClient?.trackException({ exception: err });
@@ -78,14 +72,12 @@ process.on('unhandledRejection', (reason) => {
     appInsights.defaultClient?.trackException({ exception: new Error(reason) });
 });
 
-// サーバー起動
 const server = app.listen(PORT, HOST, () => {
     logger.info(`🟢 サーバー起動中：http://${HOST}:${PORT}`);
 });
 server.keepAliveTimeout = 60000;
 server.headersTimeout = 65000;
 
-// 優雅なシャットダウン
 process.on('SIGTERM', () => {
     logger.info('🛑 SIGTERM を受信。シャットダウン中...');
     server.close(() => {
