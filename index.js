@@ -21,11 +21,11 @@ if (process.env.APPINSIGHTS_INSTRUMENTATIONKEY) {
     logger.warn('⚠️ Application Insights が未設定のため、無効です');
 }
 
+// Bot Framework 認証（AppId + シークレット）
 const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication({
     MicrosoftAppId: process.env.MicrosoftAppId,
-    MicrosoftAppType: 'UserAssignedMSI',
-    MicrosoftAppTenantId: process.env.MicrosoftAppTenantId,
-    MicrosoftAppPassword: ''
+    MicrosoftAppPassword: process.env.MicrosoftAppPassword,
+    MicrosoftAppType: 'MultiTenant'
 });
 
 const adapter = new CloudAdapter(botFrameworkAuthentication);
