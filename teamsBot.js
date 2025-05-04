@@ -1,40 +1,43 @@
+// teamsBot.js
 const { ActivityHandler } = require('botbuilder');
-const logger = require('./logger');
+const AzureOpenAI = require('./azureOpenAI');
+const log4js = require('log4js');
+
+const logger = log4js.getLogger('teamsBot');
+logger.level = 'debug';
 
 class GLJTeamsBot extends ActivityHandler {
   constructor(redisClient) {
     super();
     this.redisClient = redisClient;
+    this.openai = new AzureOpenAI(); // 🔹 OpenAIクライアントをインスタンス化
 
-    // メッセージ応答処理
     this.onMessage(async (context, next) => {
-      const userMessage = context.activity.text?.trim().toLowerCase();
-      logger.info(`💬 ユーザー: ${userMessage}`);
+      const userMessage = context.activity.text || '';
+      const userId = context.activity.from.id;
+      const conversationId = context.activity.conversation.id;
+
+      logger.info(`📩 [User]: ${userMessage}`);
 
       try {
-        if (this.redisClient) {
-          await this.redisClient.set(`message:${context.activity.conversation.id}`, userMessage);
-        } else {
-          logger.warn('⚠️ redisClient が未定義です');
-        }
+        // Redisにユーザーメッセージ保存（任意）
+        await this.redisClient.set(`message:${conversationId}`, userMessage);
 
-        if (userMessage === 'hi' || userMessage === 'hello') {
-          await context.sendActivity("Hello! 👋 How can I assist you?");
-        } else {
-          await context.sendActivity(`あなたのメッセージ '${userMessage}' を受け取りました。`);
-        }
+        // OpenAIで応答生成
+        const reply = await this.openai.generateResponse(userMessage, userId);
+        await context.sendActivity(reply);
+
       } catch (error) {
-        logger.error(`❌ メッセージ処理エラー: ${error}`);
-        await context.sendActivity('メッセージ処理中にエラーが発生しました。');
+        logger.error('❌ Bot応答エラー:', error);
+        await context.sendActivity('AI応答に失敗しました。しばらくしてからもう一度お試しください。');
       }
 
       await next();
     });
 
-    // Teams または個人スコープでの welcome メッセージ送信
     this.onMembersAdded(async (context, next) => {
       const membersAdded = context.activity.membersAdded;
-      for (const member of membersAdded) {
+      for (let member of membersAdded) {
         if (member.id !== context.activity.recipient.id) {
           await context.sendActivity('こんにちは！GLJ Teams Botへようこそ！');
         }
